@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Visualizaciones Combinadas D3.js</title>
+    <title>Visualizaciones Combinadas D3.js - Alan Valbuena</title>
     <style>
         body {
             margin: 0;
@@ -28,8 +28,17 @@
         .subtitle {
             color: #bdc3c7;
             text-align: center;
-            margin-bottom: 40px;
+            margin-bottom: 20px;
             font-size: 1.1em;
+        }
+        
+        .author {
+            color: #3498db;
+            text-align: center;
+            margin-bottom: 40px;
+            font-size: 1.2em;
+            font-weight: bold;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
         }
         
         .visualization-section {
@@ -97,6 +106,22 @@
             border-radius: 10px;
         }
         
+        #restartBtn {
+            padding: 8px 16px;
+            margin-top: 5px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background-color 0.3s ease;
+        }
+        
+        #restartBtn:hover {
+            background: #2980b9;
+        }
+        
         @media (max-width: 768px) {
             .brush-container {
                 flex-direction: column;
@@ -118,7 +143,8 @@
 <body>
     <div class="container">
         <h1>🎨 Visualizaciones Interactivas D3.js</h1>
-        <p class="subtitle">Dos experiencias visuales únicas combinadas en una sola página</p>
+        <p class="subtitle">Cinco experiencias visuales únicas combinadas en una sola página</p>
+        <div class="author">👨‍💻 Creado por Alan Valbuena</div>
         
         <!-- Visualización 1: Efecto de Fuego -->
         <div class="visualization-section">
@@ -155,6 +181,60 @@
                 <div class="chart-wrapper">
                     <div class="chart-title">Gráfico Secundario (Vinculado)</div>
                     <svg id="brush2" width="300" height="300" class="brush-svg" style="background:lightgrey;"></svg>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Visualización 3: Drag & Drop -->
+        <div class="visualization-section">
+            <h2 class="section-title">🎯 Drag & Drop Interactivo</h2>
+            <p class="section-description">Arrastra los círculos para moverlos por el área</p>
+            
+            <div class="fire-container">
+                <div class="chart-wrapper">
+                    <div class="chart-title">Área de Arrastre</div>
+                    <svg id="dragdrop" width="600" height="200" class="brush-svg" style="background:lightgrey; cursor: grab;">
+                        <circle cx="100" cy="100" r="20" fill="red" />
+                        <circle cx="300" cy="100" r="20" fill="green" />
+                        <circle cx="500" cy="100" r="20" fill="blue" />
+                    </svg>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Visualización 4: Animación Stagger -->
+        <div class="visualization-section">
+            <h2 class="section-title">📈 Animación Stagger</h2>
+            <p class="section-description">Haz clic en el gráfico para ver el efecto de animación escalonada</p>
+            
+            <div class="fire-container">
+                <div class="chart-wrapper">
+                    <div class="chart-title">Gráfico de Barras Animado</div>
+                    <svg id="stagger" width="600" height="300" class="brush-svg" style="background:lightgrey; cursor: pointer;"></svg>
+                    <p style="text-align: center; margin-top: 10px; font-size: 0.9em; color: #666;">
+                        ¡Haz clic en el gráfico para ver la animación escalonada!
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Visualización 5: Curvas de Lissajous -->
+        <div class="visualization-section">
+            <h2 class="section-title">🌀 Curvas de Lissajous</h2>
+            <p class="section-description">Animación matemática de curvas paramétricas</p>
+            
+            <div class="fire-container">
+                <div class="chart-wrapper">
+                    <div class="chart-title">Animación de Lissajous</div>
+                    <svg id="lissajous" width="300" height="300" class="brush-svg" style="background:lightgrey;"></svg>
+                    <div style="text-align: center; margin-top: 10px;">
+                        <p style="font-size: 0.9em; color: #666; margin: 5px 0;">
+                            Frecuencias: a = 1.9, b = 3.2 | Animación de 2 minutos
+                        </p>
+                        <button id="restartBtn">
+                            Reiniciar Animación
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -306,13 +386,135 @@
             makeBrush();
         }
 
+        // ============== VISUALIZACIÓN 3: DRAG & DROP ==============
+        function initDragDrop() {
+            let widget = undefined, color = undefined;
+
+            const drag = d3.drag()
+                .on("start", function(event) {
+                    color = d3.select(this).attr("fill");
+                    widget = d3.select(this).attr("fill", "lime");
+                    d3.select("#dragdrop").style("cursor", "grabbing");
+                })
+                .on("drag", function(event) {
+                    widget.attr("cx", event.x).attr("cy", event.y);
+                })
+                .on("end", function(event) {
+                    widget.attr("fill", color);
+                    widget = undefined;
+                    d3.select("#dragdrop").style("cursor", "grab");
+                });
+
+            d3.select("#dragdrop").selectAll("circle")
+                .style("cursor", "grab")
+                .call(drag);
+        }
+
+        // ============== VISUALIZACIÓN 4: STAGGER ANIMATION ==============
+        function initStaggerAnimation() {
+            let ds1 = [2, 1, 3, 5, 7, 8, 9, 9, 9, 8, 7, 5, 3, 1, 2];
+            let ds2 = [8, 9, 8, 7, 5, 3, 2, 1, 2, 3, 5, 7, 8, 9, 8];
+            const n = ds1.length;
+            const mx = d3.max(d3.merge([ds1, ds2]));
+            const svg = d3.select("#stagger");
+
+            const scX = d3.scaleLinear().domain([0, n]).range([50, 540]);
+            const scY = d3.scaleLinear().domain([0, mx]).range([250, 50]);
+
+            // Create initial bars
+            svg.selectAll("line")
+                .data(ds1)
+                .enter()
+                .append("line")
+                .attr("stroke", "red")
+                .attr("stroke-width", 20)
+                .attr("x1", (d, i) => scX(i))
+                .attr("y1", scY(0))
+                .attr("x2", (d, i) => scX(i))
+                .attr("y2", d => scY(d));
+
+            // Add click handler for animation
+            svg.on("click", function(event) {
+                [ds1, ds2] = [ds2, ds1];
+                svg.selectAll("line")
+                    .data(ds1)
+                    .transition()
+                    .duration(1000)
+                    .delay((d, i) => 200 * i)
+                    .attr("y2", d => scY(d));
+            });
+        }
+
+        // ============== VISUALIZACIÓN 5: LISSAJOUS CURVES ==============
+        let currentTimer = null;
+
+        function initLissajous() {
+            function makeLissajous() {
+                // Stop any existing timer
+                if (currentTimer) {
+                    currentTimer.stop();
+                }
+                
+                // Clear the SVG
+                const svg = d3.select("#lissajous");
+                svg.selectAll("*").remove();
+                
+                const a = 1.9, b = 3.2;             // Lissajous frequencies
+                let phi, omega = 2 * Math.PI / 10000; // 10 seconds per period
+
+                let crrX = 150 + 100, crrY = 150 + 0;
+                let prvX = crrX, prvY = crrY;
+
+                currentTimer = d3.timer(function(t) {
+                    phi = omega * t;
+
+                    crrX = 150 + 100 * Math.cos(a * phi);
+                    crrY = 150 + 100 * Math.sin(b * phi);
+
+                    // Fade existing lines
+                    svg.selectAll("line")
+                        .each(function() { 
+                            if (!this.bogus_opacity) this.bogus_opacity = 1.0;
+                            this.bogus_opacity *= 0.99;
+                        })
+                        .attr("stroke-opacity", function() { return this.bogus_opacity; })
+                        .filter(function() { return this.bogus_opacity < 0.05; })
+                        .remove();
+
+                    // Add new line segment
+                    svg.append("line")
+                        .each(function() { this.bogus_opacity = 1.0; })
+                        .attr("x1", prvX).attr("y1", prvY)
+                        .attr("x2", crrX).attr("y2", crrY)
+                        .attr("stroke", "green").attr("stroke-width", 2);
+
+                    prvX = crrX;
+                    prvY = crrY;
+
+                    if (t > 120e3) { // 120 seconds
+                        currentTimer.stop();
+                        currentTimer = null;
+                    }
+                });
+            }
+
+            // Start the animation
+            makeLissajous();
+            
+            // Add restart button functionality
+            document.getElementById('restartBtn').addEventListener('click', makeLissajous);
+        }
+
         // ============== INICIALIZACIÓN ==============
         document.addEventListener('DOMContentLoaded', function() {
-            // Inicializar ambas visualizaciones
+            // Inicializar todas las visualizaciones
             initFireEffect();
             initBrushVisualization();
+            initDragDrop();
+            initStaggerAnimation();
+            initLissajous();
             
-            console.log("🎨 Visualizaciones D3.js inicializadas correctamente");
+            console.log("🎨 Todas las visualizaciones D3.js inicializadas correctamente - Alan Valbuena");
         });
     </script>
 </body>
