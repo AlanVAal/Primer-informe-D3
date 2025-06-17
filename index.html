@@ -3,128 +3,316 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Visualización D3.js con Brush Interactivo</title>
+    <title>Visualizaciones Combinadas D3.js</title>
     <style>
         body {
             margin: 0;
             padding: 20px;
             font-family: Arial, sans-serif;
             background: #2c3e50;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
+            color: #ecf0f1;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
         }
         
         h1 {
             color: #ecf0f1;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
             text-align: center;
+            font-size: 2.5em;
         }
         
-        p {
+        .subtitle {
+            color: #bdc3c7;
+            text-align: center;
+            margin-bottom: 40px;
+            font-size: 1.1em;
+        }
+        
+        .visualization-section {
+            margin-bottom: 50px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 30px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+        }
+        
+        .section-title {
+            color: #ecf0f1;
+            font-size: 1.8em;
+            margin-bottom: 15px;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .section-description {
             color: #bdc3c7;
             text-align: center;
             margin-bottom: 30px;
+            font-size: 1em;
         }
         
-        .chart-container {
+        .fire-container {
             display: flex;
-            gap: 20px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        
+        .brush-container {
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .chart-wrapper {
             background: white;
             padding: 20px;
             border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+            margin: 10px;
         }
         
         .chart-title {
             text-align: center;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
             font-weight: bold;
             color: #2c3e50;
+            font-size: 1.1em;
+        }
+        
+        .fire-svg {
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .brush-svg {
+            border-radius: 10px;
+        }
+        
+        @media (max-width: 768px) {
+            .brush-container {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+            
+            .visualization-section {
+                padding: 20px;
+            }
         }
     </style>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="https://d3js.org/d3.v5.min.js"></script>
 </head>
 <body>
-    <h1>📊 Visualización Interactiva con D3.js</h1>
-    <p>Mueve el cursor sobre el primer gráfico para ver el efecto en ambas visualizaciones</p>
-    
-    <div class="chart-container">
-        <div>
-            <div class="chart-title">Gráfico Principal (Interactivo)</div>
-            <svg id="brush1" width="300" height="300" style="background:lightgrey; border-radius: 10px;"></svg>
+    <div class="container">
+        <h1>🎨 Visualizaciones Interactivas D3.js</h1>
+        <p class="subtitle">Dos experiencias visuales únicas combinadas en una sola página</p>
+        
+        <!-- Visualización 1: Efecto de Fuego -->
+        <div class="visualization-section">
+            <h2 class="section-title">🔥 Efecto de Fuego con Cursor</h2>
+            <p class="section-description">Mueve el cursor rápidamente para crear partículas de fuego animadas</p>
+            
+            <div class="fire-container">
+                <div class="chart-wrapper">
+                    <div class="chart-title">Área de Fuego Interactiva</div>
+                    <svg id="coords" width="500" height="350" class="fire-svg" style="background: #f9f9f9; cursor: crosshair;">
+                        <defs>
+                            <radialGradient id="fireGradient" cx="50%" cy="50%" r="50%">
+                                <stop offset="0%" style="stop-color:#ffff00;stop-opacity:1" />
+                                <stop offset="30%" style="stop-color:#ff6600;stop-opacity:0.8" />
+                                <stop offset="60%" style="stop-color:#ff0000;stop-opacity:0.6" />
+                                <stop offset="100%" style="stop-color:#990000;stop-opacity:0.2" />
+                            </radialGradient>
+                        </defs>
+                    </svg>
+                </div>
+            </div>
         </div>
-        <div>
-            <div class="chart-title">Gráfico Secundario (Vinculado)</div>
-            <svg id="brush2" width="300" height="300" style="background:lightgrey; border-radius: 10px;"></svg>
+        
+        <!-- Visualización 2: Brush Interactivo -->
+        <div class="visualization-section">
+            <h2 class="section-title">📊 Brush Interactivo Vinculado</h2>
+            <p class="section-description">Mueve el cursor sobre el primer gráfico para ver el efecto en ambas visualizaciones</p>
+            
+            <div class="brush-container">
+                <div class="chart-wrapper">
+                    <div class="chart-title">Gráfico Principal (Interactivo)</div>
+                    <svg id="brush1" width="300" height="300" class="brush-svg" style="background:lightgrey;"></svg>
+                </div>
+                <div class="chart-wrapper">
+                    <div class="chart-title">Gráfico Secundario (Vinculado)</div>
+                    <svg id="brush2" width="300" height="300" class="brush-svg" style="background:lightgrey;"></svg>
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
-        // Datos de ejemplo (simulando el CSV)
-        const data = [
-            {A: 50, B: 80}, {A: 120, B: 150}, {A: 200, B: 100}, {A: 80, B: 200},
-            {A: 150, B: 50}, {A: 250, B: 180}, {A: 30, B: 120}, {A: 180, B: 250},
-            {A: 100, B: 30}, {A: 220, B: 200}, {A: 60, B: 160}, {A: 160, B: 80},
-            {A: 240, B: 120}, {A: 40, B: 240}, {A: 140, B: 40}, {A: 280, B: 160},
-            {A: 20, B: 180}, {A: 190, B: 60}, {A: 110, B: 220}, {A: 270, B: 90},
-            {A: 90, B: 140}, {A: 210, B: 280}, {A: 130, B: 20}, {A: 260, B: 240},
-            {A: 70, B: 70}, {A: 170, B: 170}, {A: 230, B: 130}, {A: 290, B: 270}
-        ];
+        // ============== VISUALIZACIÓN 1: EFECTO DE FUEGO ==============
+        function initFireEffect() {
+            const svg = d3.select('#coords');
+            const txt = svg.append('text')
+                           .attr('font-family', 'Arial, sans-serif')
+                           .attr('font-size', '14px')
+                           .attr('fill', '#2c3e50')
+                           .attr('font-weight', 'bold')
+                           .style('pointer-events', 'none');
 
-        function makeBrush() {
-            var svg1 = d3.select("#brush1"), svg2 = d3.select("#brush2");
+            let lastPosition = [0, 0];
+            let lastTime = Date.now();
+            let fireParticles = [];
 
-            var sc1 = d3.scaleLinear()
-                .domain([0, 10, 50])
-                .range(["lime", "yellow", "red"]);
-            var sc2 = d3.scaleLinear()
-                .domain([0, 10, 50])
-                .range(["lime", "yellow", "blue"]);
+            function createFireParticle(x, y, intensity) {
+                const particle = svg.append('circle')
+                    .attr('cx', x + (Math.random() - 0.5) * 20)
+                    .attr('cy', y + (Math.random() - 0.5) * 20)
+                    .attr('r', Math.random() * 8 + 2)
+                    .attr('fill', 'url(#fireGradient)')
+                    .style('opacity', intensity);
 
-            var cs1 = drawCircles(svg1, data, d => +d.A, d => +d.B, sc1);
-            var cs2 = drawCircles(svg2, data, d => +d.A, d => +d.B, sc2);
+                // Animate the particle
+                particle.transition()
+                    .duration(800 + Math.random() * 400)
+                    .ease(d3.easeQuadOut)
+                    .attr('cy', y - 30 - Math.random() * 40)
+                    .attr('r', 0)
+                    .style('opacity', 0)
+                    .remove();
 
-            svg1.call(installHandlers, data, cs1, cs2, sc1, sc2);
+                // Clean up reference
+                setTimeout(() => {
+                    const index = fireParticles.indexOf(particle);
+                    if (index > -1) fireParticles.splice(index, 1);
+                }, 1200);
+
+                fireParticles.push(particle);
+            }
+
+            svg.on('mousemove', function(event) {
+                const pt = d3.pointer(event);
+                const currentTime = Date.now();
+                
+                // Calculate speed
+                const deltaX = pt[0] - lastPosition[0];
+                const deltaY = pt[1] - lastPosition[1];
+                const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+                const deltaTime = currentTime - lastTime;
+                const speed = distance / (deltaTime || 1);
+
+                // Update coordinate text
+                txt.attr('x', 18 + pt[0])
+                   .attr('y', 6 + pt[1])
+                   .text('🔥 (' + Math.round(pt[0]) + ',' + Math.round(pt[1]) + ') Velocidad: ' + speed.toFixed(1));
+
+                // Create fire effect if moving fast
+                const speedThreshold = 1.5;
+                if (speed > speedThreshold && deltaTime > 0) {
+                    const intensity = Math.min(speed / 5, 1);
+                    const numParticles = Math.floor(intensity * 5) + 1;
+                    
+                    for (let i = 0; i < numParticles; i++) {
+                        createFireParticle(pt[0], pt[1], intensity);
+                    }
+                }
+
+                lastPosition = pt;
+                lastTime = currentTime;
+            });
+
+            // Clean up on mouse leave
+            svg.on('mouseleave', function() {
+                fireParticles.forEach(particle => particle.remove());
+                fireParticles = [];
+                txt.text('');
+            });
         }
 
-        function drawCircles(svg, data, accX, accY, sc) {
-            var color = sc(Infinity);
-            return svg.selectAll("circle")
-                .data(data)
-                .enter()
-                .append("circle")
-                .attr("r", 5)
-                .attr("cx", accX)
-                .attr("cy", accY)
-                .attr("fill", color)
-                .attr("fill-opacity", 0.4)
-                .style("transition", "fill 0.2s ease");
-        }
+        // ============== VISUALIZACIÓN 2: BRUSH INTERACTIVO ==============
+        function initBrushVisualization() {
+            // Datos de ejemplo (simulando el CSV)
+            const data = [
+                {A: 50, B: 80}, {A: 120, B: 150}, {A: 200, B: 100}, {A: 80, B: 200},
+                {A: 150, B: 50}, {A: 250, B: 180}, {A: 30, B: 120}, {A: 180, B: 250},
+                {A: 100, B: 30}, {A: 220, B: 200}, {A: 60, B: 160}, {A: 160, B: 80},
+                {A: 240, B: 120}, {A: 40, B: 240}, {A: 140, B: 40}, {A: 280, B: 160},
+                {A: 20, B: 180}, {A: 190, B: 60}, {A: 110, B: 220}, {A: 270, B: 90},
+                {A: 90, B: 140}, {A: 210, B: 280}, {A: 130, B: 20}, {A: 260, B: 240},
+                {A: 70, B: 70}, {A: 170, B: 170}, {A: 230, B: 130}, {A: 290, B: 270}
+            ];
 
-        function installHandlers(svg, data, cs1, cs2, sc1, sc2) {
-            svg.attr("cursor", "crosshair")
-                .on("mousemove", function() {
-                    var pt = d3.mouse(svg.node());
-                    cs1.attr("fill", function(d, i) {
-                        var r = Math.hypot(pt[0] - d3.select(this).attr("cx"),
-                                         pt[1] - d3.select(this).attr("cy"));
-                        data[i]["r"] = r;
-                        return sc1(r);
+            function makeBrush() {
+                var svg1 = d3.select("#brush1"), svg2 = d3.select("#brush2");
+
+                var sc1 = d3.scaleLinear()
+                    .domain([0, 10, 50])
+                    .range(["lime", "yellow", "red"]);
+                var sc2 = d3.scaleLinear()
+                    .domain([0, 10, 50])
+                    .range(["lime", "yellow", "blue"]);
+
+                var cs1 = drawCircles(svg1, data, d => +d.A, d => +d.B, sc1);
+                var cs2 = drawCircles(svg2, data, d => +d.A, d => +d.B, sc2);
+
+                svg1.call(installHandlers, data, cs1, cs2, sc1, sc2);
+            }
+
+            function drawCircles(svg, data, accX, accY, sc) {
+                var color = sc(Infinity);
+                return svg.selectAll("circle")
+                    .data(data)
+                    .enter()
+                    .append("circle")
+                    .attr("r", 6)
+                    .attr("cx", accX)
+                    .attr("cy", accY)
+                    .attr("fill", color)
+                    .attr("fill-opacity", 0.6)
+                    .attr("stroke", "white")
+                    .attr("stroke-width", 1)
+                    .style("transition", "fill 0.2s ease");
+            }
+
+            function installHandlers(svg, data, cs1, cs2, sc1, sc2) {
+                svg.attr("cursor", "crosshair")
+                    .on("mousemove", function() {
+                        var pt = d3.mouse(svg.node());
+                        cs1.attr("fill", function(d, i) {
+                            var r = Math.hypot(pt[0] - d3.select(this).attr("cx"),
+                                             pt[1] - d3.select(this).attr("cy"));
+                            data[i]["r"] = r;
+                            return sc1(r);
+                        });
+                        cs2.attr("fill", (d, i) => sc2(data[i]["r"]));
+                    })
+                    .on("mouseleave", function() {
+                        cs1.attr("fill", sc1(Infinity));
+                        cs2.attr("fill", sc2(Infinity));
                     });
-                    cs2.attr("fill", (d, i) => sc2(data[i]["r"]));
-                })
-                .on("mouseleave", function() {
-                    cs1.attr("fill", sc1(Infinity));
-                    cs2.attr("fill", sc2(Infinity));
-                });
+            }
+
+            makeBrush();
         }
 
-        // Inicializar cuando el DOM esté listo
+        // ============== INICIALIZACIÓN ==============
         document.addEventListener('DOMContentLoaded', function() {
-            makeBrush();
+            // Inicializar ambas visualizaciones
+            initFireEffect();
+            initBrushVisualization();
+            
+            console.log("🎨 Visualizaciones D3.js inicializadas correctamente");
         });
     </script>
 </body>
