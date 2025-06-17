@@ -314,58 +314,62 @@
         }
 
         // ============== VISUALIZACIÓN 2: BRUSH INTERACTIVO (CORREGIDA) ==============
-       function initBrushVisualization() {
-        d3.csv("https://raw.githubusercontent.com/AlanVAal/Primer-informe-D3/main/dense.csv").then(data => {
-            makeBrush(data);
-        });
-        
-        function makeBrush(data) {
-            var svg1 = d3.select("#brush1"), svg2 = d3.select("#brush2");
-        
-            var sc1 = d3.scaleLinear().domain([0, 10, 50]).range(["lime", "yellow", "red"]);
-            var sc2 = d3.scaleLinear().domain([0, 10, 50]).range(["lime", "yellow", "blue"]);
-        
-            var cs1 = drawCircles(svg1, data, d => +d.A * 10, d => +d.B * 10, sc1); // Posición ajustada
-            var cs2 = drawCircles(svg2, data, d => +d.A * 10, d => +d.B * 10, sc2);
-        
-            svg1.call(installHandlers, data, cs1, cs2, sc1, sc2);
-        }
-        
-        function drawCircles(svg, data, accX, accY, sc) {
-            var color = sc(0);
-            return svg.selectAll("circle")
-                .data(data)
-                .enter()
-                .append("circle")
-                .attr("r", 6)
-                .attr("cx", accX)
-                .attr("cy", accY)
-                .attr("fill", color)
-                .attr("fill-opacity", 0.6)
-                .attr("stroke", "white")
-                .attr("stroke-width", 1)
-                .style("transition", "fill 0.2s ease");
-        }
-        
-        function installHandlers(svg, data, cs1, cs2, sc1, sc2) {
-            svg.style("cursor", "crosshair")
-                .on("mousemove", function(event) {
-                    var pt = d3.pointer(event, this);
-                    cs1.attr("fill", function(d, i) {
-                        var r = Math.hypot(pt[0] - d3.select(this).attr("cx"),
-                                           pt[1] - d3.select(this).attr("cy"));
-                        data[i]["r"] = r;
-                        return sc1(r);
-                    });
-                    cs2.attr("fill", (d, i) => sc2(data[i]["r"]));
-                })
-                .on("mouseleave", function() {
-                    cs1.attr("fill", sc1(0));
-                    cs2.attr("fill", sc2(0));
-                });
-        }
-        }
+        function initBrushVisualization() {
+            // Datos de ejemplo (simulando el CSV)
+            const data = [dense.csv];
 
+            function makeBrush() {
+                var svg1 = d3.select("#brush1"), svg2 = d3.select("#brush2");
+
+                var sc1 = d3.scaleLinear()
+                    .domain([0, 10, 50])
+                    .range(["lime", "yellow", "red"]);
+                var sc2 = d3.scaleLinear()
+                    .domain([0, 10, 50])
+                    .range(["lime", "yellow", "blue"]);
+
+                var cs1 = drawCircles(svg1, data, d => +d.A, d => +d.B, sc1);
+                var cs2 = drawCircles(svg2, data, d => +d.A, d => +d.B, sc2);
+
+                svg1.call(installHandlers, data, cs1, cs2, sc1, sc2);
+            }
+
+            function drawCircles(svg, data, accX, accY, sc) {
+                var color = sc(Infinity);
+                return svg.selectAll("circle")
+                    .data(data)
+                    .enter()
+                    .append("circle")
+                    .attr("r", 6)
+                    .attr("cx", accX)
+                    .attr("cy", accY)
+                    .attr("fill", color)
+                    .attr("fill-opacity", 0.6)
+                    .attr("stroke", "white")
+                    .attr("stroke-width", 1)
+                    .style("transition", "fill 0.2s ease");
+            }
+
+            function installHandlers(svg, data, cs1, cs2, sc1, sc2) {
+                svg.style("cursor", "crosshair")
+                    .on("mousemove", function(event) {
+                        var pt = d3.pointer(event, this);
+                        cs1.attr("fill", function(d, i) {
+                            var r = Math.hypot(pt[0] - d3.select(this).attr("cx"),
+                                             pt[1] - d3.select(this).attr("cy"));
+                            data[i]["r"] = r;
+                            return sc1(r);
+                        });
+                        cs2.attr("fill", (d, i) => sc2(data[i]["r"]));
+                    })
+                    .on("mouseleave", function() {
+                        cs1.attr("fill", sc1(Infinity));
+                        cs2.attr("fill", sc2(Infinity));
+                    });
+            }
+
+            makeBrush();
+        }
 
         // ============== VISUALIZACIÓN 3: DRAG & DROP (CORREGIDA) ==============
         function initDragDrop() {
