@@ -138,7 +138,6 @@
         }
     </style>
     <script src="https://d3js.org/d3.v7.min.js"></script>
-    <script src="https://d3js.org/d3.v5.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -241,7 +240,7 @@
     </div>
 
     <script>
-        // ============== VISUALIZACIÓN 1: EFECTO DE FUEGO ==============
+        // ============== VISUALIZACIÓN 1: EFECTO DE FUEGO (CORREGIDA) ==============
         function initFireEffect() {
             const svg = d3.select('#coords');
             const txt = svg.append('text')
@@ -270,19 +269,15 @@
                     .attr('cy', y - 30 - Math.random() * 40)
                     .attr('r', 0)
                     .style('opacity', 0)
-                    .remove();
-
-                // Clean up reference
-                setTimeout(() => {
-                    const index = fireParticles.indexOf(particle);
-                    if (index > -1) fireParticles.splice(index, 1);
-                }, 1200);
+                    .on('end', function() {
+                        particle.remove();
+                    });
 
                 fireParticles.push(particle);
             }
 
             svg.on('mousemove', function(event) {
-                const pt = d3.pointer(event);
+                const pt = d3.pointer(event, this);
                 const currentTime = Date.now();
                 
                 // Calculate speed
@@ -314,13 +309,11 @@
 
             // Clean up on mouse leave
             svg.on('mouseleave', function() {
-                fireParticles.forEach(particle => particle.remove());
-                fireParticles = [];
                 txt.text('');
             });
         }
 
-        // ============== VISUALIZACIÓN 2: BRUSH INTERACTIVO ==============
+        // ============== VISUALIZACIÓN 2: BRUSH INTERACTIVO (CORREGIDA) ==============
         function initBrushVisualization() {
             // Datos de ejemplo (simulando el CSV)
             const data = [
@@ -366,9 +359,9 @@
             }
 
             function installHandlers(svg, data, cs1, cs2, sc1, sc2) {
-                svg.attr("cursor", "crosshair")
-                    .on("mousemove", function() {
-                        var pt = d3.mouse(svg.node());
+                svg.style("cursor", "crosshair")
+                    .on("mousemove", function(event) {
+                        var pt = d3.pointer(event, this);
                         cs1.attr("fill", function(d, i) {
                             var r = Math.hypot(pt[0] - d3.select(this).attr("cx"),
                                              pt[1] - d3.select(this).attr("cy"));
@@ -386,20 +379,20 @@
             makeBrush();
         }
 
-        // ============== VISUALIZACIÓN 3: DRAG & DROP ==============
+        // ============== VISUALIZACIÓN 3: DRAG & DROP (CORREGIDA) ==============
         function initDragDrop() {
             let widget = undefined, color = undefined;
 
             const drag = d3.drag()
-                .on("start", function(event) {
+                .on("start", function(event, d) {
                     color = d3.select(this).attr("fill");
                     widget = d3.select(this).attr("fill", "lime");
                     d3.select("#dragdrop").style("cursor", "grabbing");
                 })
-                .on("drag", function(event) {
+                .on("drag", function(event, d) {
                     widget.attr("cx", event.x).attr("cy", event.y);
                 })
-                .on("end", function(event) {
+                .on("end", function(event, d) {
                     widget.attr("fill", color);
                     widget = undefined;
                     d3.select("#dragdrop").style("cursor", "grab");
