@@ -137,7 +137,6 @@
             }
         }
     </style>
-    <script src="https://d3js.org/d3.v7.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -239,6 +238,7 @@
         </div>
     </div>
 
+    <script src="https://d3js.org/d3.v7.min.js"></script>
     <script>
         // ============== VISUALIZACIÓN 1: EFECTO DE FUEGO ==============
         function initFireEffect() {
@@ -252,7 +252,6 @@
 
             let lastPosition = [0, 0];
             let lastTime = Date.now();
-            let fireParticles = [];
 
             function createFireParticle(x, y, intensity) {
                 const particle = svg.append('circle')
@@ -271,8 +270,6 @@
                     .on('end', function() {
                         particle.remove();
                     });
-
-                fireParticles.push(particle);
             }
 
             svg.on('mousemove', function(event) {
@@ -285,8 +282,8 @@
                 const deltaTime = currentTime - lastTime;
                 const speed = distance / (deltaTime || 1);
 
-                txt.attr('x', 18 + pt[0])
-                   .attr('y', 6 + pt[1])
+                txt.attr('x', Math.min(pt[0] + 10, 380))
+                   .attr('y', Math.max(pt[1] - 10, 20))
                    .text('🔥 (' + Math.round(pt[0]) + ',' + Math.round(pt[1]) + ') Velocidad: ' + speed.toFixed(1));
 
                 const speedThreshold = 1.5;
@@ -308,119 +305,137 @@
             });
         }
 
-        // ============== VISUALIZACIÓN 2: BRUSH INTERACTIVO (CORREGIDA) ==============
+        // ============== VISUALIZACIÓN 2: BRUSH INTERACTIVO ==============
         function initBrushVisualization() {
-            // Datos de ejemplo
             const data = [
                 {'A': 50, 'B': 80}, {'A': 120, 'B': 150}, {'A': 200, 'B': 100}, {'A': 80, 'B': 200},
                 {'A': 150, 'B': 50}, {'A': 250, 'B': 180}, {'A': 30, 'B': 120}, {'A': 180, 'B': 250},
                 {'A': 100, 'B': 30}, {'A': 220, 'B': 200}, {'A': 60, 'B': 160}, {'A': 160, 'B': 80},
-                {'A': 240, 'B': 120}, {'A': 40, 'B': 240}, {'A': 140, 'B': 40}, {'A': 280, 'B': 160},
-                {'A': 20, 'B': 180}, {'A': 190, 'B': 60}, {'A': 110, 'B': 220}, {'A': 270, 'B': 90},
-                {'A': 90, 'B': 140}, {'A': 210, 'B': 280}, {'A': 130, 'B': 20}, {'A': 260, 'B': 240},
-                {'A': 70, 'B': 70}, {'A': 170, 'B': 170}, {'A': 230, 'B': 130}, {'A': 290, 'B': 270}
+                {'A': 240, 'B': 120}, {'A': 40, 'B': 240}, {'A': 140, 'B': 40}, {'A': 280, 'B': 160}
             ];
 
-            function makeBrush() {
-                const svg1 = d3.select("#brush1");
-                const svg2 = d3.select("#brush2");
+            const svg1 = d3.select("#brush1");
+            const svg2 = d3.select("#brush2");
+            
+            // Ajustar márgenes para dar más espacio a los puntos
+            const margin = {top: 30, right: 30, bottom: 30, left: 30};
+            const width = 300 - margin.left - margin.right;
+            const height = 300 - margin.top - margin.bottom;
+            
+            svg1.selectAll("*").remove();
+            svg2.selectAll("*").remove();
+            
+            const g1 = svg1.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+            const g2 = svg2.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+            
+            // Calcular el dominio real de los datos para asegurar que todos los puntos sean visibles
+            const xExtent = d3.extent(data, d => d.A);
+            const yExtent = d3.extent(data, d => d.B);
+            
+            // Agregar un pequeño padding a los dominios
+            const xPadding = (xExtent[1] - xExtent[0]) * 0.05;
+            const yPadding = (yExtent[1] - yExtent[0]) * 0.05;
+            
+            const xScale = d3.scaleLinear()
+                .domain([xExtent[0] - xPadding, xExtent[1] + xPadding])
+                .range([0, width]);
                 
-                // Configurar dimensiones
-                const margin = {top: 20, right: 20, bottom: 20, left: 20};
-                const width = 300 - margin.left - margin.right;
-                const height = 300 - margin.top - margin.bottom;
+            const yScale = d3.scaleLinear()
+                .domain([yExtent[0] - yPadding, yExtent[1] + yPadding])
+                .range([height, 0]);
+            
+            const sc1 = d3.scaleSequential(d3.interpolateViridis).domain([0, 200]);
+            const sc2 = d3.scaleSequential(d3.interpolatePlasma).domain([0, 200]);
+
+            // Agregar ejes para mejor visualización
+            const xAxis = d3.axisBottom(xScale).ticks(5);
+            const yAxis = d3.axisLeft(yScale).ticks(5);
+            
+            g1.append("g")
+                .attr("transform", `translate(0,${height})`)
+                .call(xAxis)
+                .selectAll("text")
+                .style("font-size", "10px")
+                .style("fill", "#666");
                 
-                // Limpiar SVGs
-                svg1.selectAll("*").remove();
-                svg2.selectAll("*").remove();
+            g1.append("g")
+                .call(yAxis)
+                .selectAll("text")
+                .style("font-size", "10px")
+                .style("fill", "#666");
                 
-                // Crear grupos
-                const g1 = svg1.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
-                const g2 = svg2.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+            g2.append("g")
+                .attr("transform", `translate(0,${height})`)
+                .call(xAxis)
+                .selectAll("text")
+                .style("font-size", "10px")
+                .style("fill", "#666");
                 
-                // Escalas de posicionamiento
-                const xScale = d3.scaleLinear()
-                    .domain(d3.extent(data, d => d.A))
-                    .range([0, width]);
+            g2.append("g")
+                .call(yAxis)
+                .selectAll("text")
+                .style("font-size", "10px")
+                .style("fill", "#666");
+
+            const cs1 = g1.selectAll("circle")
+                .data(data)
+                .enter()
+                .append("circle")
+                .attr("r", 6)
+                .attr("cx", d => xScale(d.A))
+                .attr("cy", d => yScale(d.B))
+                .attr("fill", sc1(100))
+                .attr("stroke", "white")
+                .attr("stroke-width", 2);
+
+            const cs2 = g2.selectAll("circle")
+                .data(data)
+                .enter()
+                .append("circle")
+                .attr("r", 6)
+                .attr("cx", d => xScale(d.A))
+                .attr("cy", d => yScale(d.B))
+                .attr("fill", sc2(100))
+                .attr("stroke", "white")
+                .attr("stroke-width", 2);
+
+            svg1.style("cursor", "crosshair")
+                .on("mousemove", function(event) {
+                    const pt = d3.pointer(event, this);
+                    const adjustedX = pt[0] - margin.left;
+                    const adjustedY = pt[1] - margin.top;
                     
-                const yScale = d3.scaleLinear()
-                    .domain(d3.extent(data, d => d.B))
-                    .range([height, 0]);
-                
-                // Escalas de color corregidas
-                const sc1 = d3.scaleLinear()
-                    .domain([0, 50, 100])
-                    .range(["lime", "yellow", "red"]);
-                    
-                const sc2 = d3.scaleLinear()
-                    .domain([0, 50, 100])
-                    .range(["lime", "yellow", "blue"]);
-
-                const cs1 = drawCircles(g1, data, d => xScale(d.A), d => yScale(d.B), sc1);
-                const cs2 = drawCircles(g2, data, d => xScale(d.A), d => yScale(d.B), sc2);
-
-                svg1.call(installHandlers, data, cs1, cs2, sc1, sc2, xScale, yScale, margin);
-            }
-
-            function drawCircles(svg, data, accX, accY, sc) {
-                const color = sc(100); // Color inicial
-                return svg.selectAll("circle")
-                    .data(data)
-                    .enter()
-                    .append("circle")
-                    .attr("r", 6)
-                    .attr("cx", accX)
-                    .attr("cy", accY)
-                    .attr("fill", color)
-                    .attr("fill-opacity", 0.7)
-                    .attr("stroke", "white")
-                    .attr("stroke-width", 1.5)
-                    .style("transition", "fill 0.2s ease");
-            }
-
-            function installHandlers(svg, data, cs1, cs2, sc1, sc2, xScale, yScale, margin) {
-                svg.style("cursor", "crosshair")
-                    .on("mousemove", function(event) {
-                        const pt = d3.pointer(event, this);
-                        // Ajustar por el margen
-                        const adjustedX = pt[0] - margin.left;
-                        const adjustedY = pt[1] - margin.top;
-                        
-                        cs1.attr("fill", function(d, i) {
-                            const cx = xScale(d.A);
-                            const cy = yScale(d.B);
-                            const r = Math.hypot(adjustedX - cx, adjustedY - cy);
-                            data[i]["r"] = r;
-                            return sc1(r);
-                        });
-
-                        cs2.attr("fill", (d, i) => sc2(data[i]["r"]));
-                    })
-                    .on("mouseleave", function() {
-                        cs1.attr("fill", sc1(100));
-                        cs2.attr("fill", sc2(100));
+                    cs1.attr("fill", function(d, i) {
+                        const cx = xScale(d.A);
+                        const cy = yScale(d.B);
+                        const r = Math.sqrt((adjustedX - cx) ** 2 + (adjustedY - cy) ** 2);
+                        data[i]["r"] = r;
+                        return sc1(Math.min(r, 200));
                     });
-            }
 
-            makeBrush();
+                    cs2.attr("fill", (d, i) => sc2(Math.min(data[i]["r"] || 100, 200)));
+                })
+                .on("mouseleave", function() {
+                    cs1.attr("fill", sc1(100));
+                    cs2.attr("fill", sc2(100));
+                });
         }
 
         // ============== VISUALIZACIÓN 3: DRAG & DROP ==============
         function initDragDrop() {
-            let widget = undefined, color = undefined;
+            let originalColor = undefined;
 
             const drag = d3.drag()
                 .on("start", function(event, d) {
-                    color = d3.select(this).attr("fill");
-                    widget = d3.select(this).attr("fill", "lime");
+                    originalColor = d3.select(this).attr("fill");
+                    d3.select(this).attr("fill", "lime");
                     d3.select("#dragdrop").style("cursor", "grabbing");
                 })
                 .on("drag", function(event, d) {
-                    widget.attr("cx", event.x).attr("cy", event.y);
+                    d3.select(this).attr("cx", event.x).attr("cy", event.y);
                 })
                 .on("end", function(event, d) {
-                    widget.attr("fill", color);
-                    widget = undefined;
+                    d3.select(this).attr("fill", originalColor);
                     d3.select("#dragdrop").style("cursor", "grab");
                 });
 
@@ -433,19 +448,19 @@
         function initStaggerAnimation() {
             let ds1 = [2, 1, 3, 5, 7, 8, 9, 9, 9, 8, 7, 5, 3, 1, 2];
             let ds2 = [8, 9, 8, 7, 5, 3, 2, 1, 2, 3, 5, 7, 8, 9, 8];
-            const n = ds1.length;
-            const mx = d3.max(d3.merge([ds1, ds2]));
+            const mx = Math.max(...ds1, ...ds2);
             const svg = d3.select("#stagger");
 
-            const scX = d3.scaleLinear().domain([0, n]).range([50, 540]);
+            const scX = d3.scaleLinear().domain([0, ds1.length]).range([50, 550]);
             const scY = d3.scaleLinear().domain([0, mx]).range([250, 50]);
 
             svg.selectAll("line")
                 .data(ds1)
                 .enter()
                 .append("line")
-                .attr("stroke", "red")
+                .attr("stroke", "#e74c3c")
                 .attr("stroke-width", 20)
+                .attr("stroke-linecap", "round")
                 .attr("x1", (d, i) => scX(i))
                 .attr("y1", scY(0))
                 .attr("x2", (d, i) => scX(i))
@@ -456,9 +471,11 @@
                 svg.selectAll("line")
                     .data(ds1)
                     .transition()
-                    .duration(1000)
-                    .delay((d, i) => 200 * i)
-                    .attr("y2", d => scY(d));
+                    .duration(800)
+                    .delay((d, i) => i * 100)
+                    .ease(d3.easeBounceOut)
+                    .attr("y2", d => scY(d))
+                    .attr("stroke", ds1 === ds2 ? "#27ae60" : "#e74c3c");
             });
         }
 
@@ -475,36 +492,42 @@
                 svg.selectAll("*").remove();
                 
                 const a = 1.9, b = 3.2;
+                const centerX = 150, centerY = 150, radius = 100;
                 let phi, omega = 2 * Math.PI / 10000;
 
-                let crrX = 150 + 100, crrY = 150 + 0;
+                let crrX = centerX + radius;
+                let crrY = centerY;
                 let prvX = crrX, prvY = crrY;
 
                 currentTimer = d3.timer(function(t) {
                     phi = omega * t;
 
-                    crrX = 150 + 100 * Math.cos(a * phi);
-                    crrY = 150 + 100 * Math.sin(b * phi);
+                    crrX = centerX + radius * Math.cos(a * phi);
+                    crrY = centerY + radius * Math.sin(b * phi);
 
                     svg.selectAll("line")
                         .each(function() { 
                             if (!this.bogus_opacity) this.bogus_opacity = 1.0;
-                            this.bogus_opacity *= 0.99;
+                            this.bogus_opacity *= 0.995;
                         })
                         .attr("stroke-opacity", function() { return this.bogus_opacity; })
                         .filter(function() { return this.bogus_opacity < 0.05; })
                         .remove();
 
-                    svg.append("line")
-                        .each(function() { this.bogus_opacity = 1.0; })
-                        .attr("x1", prvX).attr("y1", prvY)
-                        .attr("x2", crrX).attr("y2", crrY)
-                        .attr("stroke", "green").attr("stroke-width", 2);
+                    if (Math.abs(crrX - prvX) > 0.1 || Math.abs(crrY - prvY) > 0.1) {
+                        svg.append("line")
+                            .each(function() { this.bogus_opacity = 1.0; })
+                            .attr("x1", prvX).attr("y1", prvY)
+                            .attr("x2", crrX).attr("y2", crrY)
+                            .attr("stroke", "#27ae60")
+                            .attr("stroke-width", 2)
+                            .attr("stroke-linecap", "round");
+                    }
 
                     prvX = crrX;
                     prvY = crrY;
 
-                    if (t > 120e3) {
+                    if (t > 120000) {
                         currentTimer.stop();
                         currentTimer = null;
                     }
@@ -512,19 +535,41 @@
             }
 
             makeLissajous();
-            document.getElementById('restartBtn').addEventListener('click', makeLissajous);
+            
+            // Usar addEventListener en lugar de onclick
+            const restartBtn = document.getElementById('restartBtn');
+            if (restartBtn) {
+                restartBtn.addEventListener('click', makeLissajous);
+            }
         }
 
         // ============== INICIALIZACIÓN ==============
-        document.addEventListener('DOMContentLoaded', function() {
-            initFireEffect();
-            initBrushVisualization();
-            initDragDrop();
-            initStaggerAnimation();
-            initLissajous();
+        // Esperar a que D3 se cargue completamente
+        function initializeAll() {
+            if (typeof d3 === 'undefined') {
+                setTimeout(initializeAll, 100);
+                return;
+            }
             
-            console.log("🎨 Todas las visualizaciones D3.js inicializadas correctamente - Alan Valbuena");
-        });
+            try {
+                initFireEffect();
+                initBrushVisualization();
+                initDragDrop();
+                initStaggerAnimation();
+                initLissajous();
+                
+                console.log("🎨 Todas las visualizaciones D3.js inicializadas correctamente - Alan Valbuena");
+            } catch (error) {
+                console.error("Error al inicializar visualizaciones:", error);
+            }
+        }
+
+        // Inicializar cuando el DOM esté listo
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeAll);
+        } else {
+            initializeAll();
+        }
     </script>
 </body>
 </html>
