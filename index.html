@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualización D3.js con Brush Interactivo</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: #2c3e50;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        
+        h1 {
+            color: #ecf0f1;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        p {
+            color: #bdc3c7;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .chart-container {
+            display: flex;
+            gap: 20px;
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        .chart-title {
+            text-align: center;
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+    </style>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+</head>
+<body>
+    <h1>📊 Visualización Interactiva con D3.js</h1>
+    <p>Mueve el cursor sobre el primer gráfico para ver el efecto en ambas visualizaciones</p>
+    
+    <div class="chart-container">
+        <div>
+            <div class="chart-title">Gráfico Principal (Interactivo)</div>
+            <svg id="brush1" width="300" height="300" style="background:lightgrey; border-radius: 10px;"></svg>
+        </div>
+        <div>
+            <div class="chart-title">Gráfico Secundario (Vinculado)</div>
+            <svg id="brush2" width="300" height="300" style="background:lightgrey; border-radius: 10px;"></svg>
+        </div>
+    </div>
+
+    <script>
+        // Datos de ejemplo (simulando el CSV)
+        const data = [
+            {A: 50, B: 80}, {A: 120, B: 150}, {A: 200, B: 100}, {A: 80, B: 200},
+            {A: 150, B: 50}, {A: 250, B: 180}, {A: 30, B: 120}, {A: 180, B: 250},
+            {A: 100, B: 30}, {A: 220, B: 200}, {A: 60, B: 160}, {A: 160, B: 80},
+            {A: 240, B: 120}, {A: 40, B: 240}, {A: 140, B: 40}, {A: 280, B: 160},
+            {A: 20, B: 180}, {A: 190, B: 60}, {A: 110, B: 220}, {A: 270, B: 90},
+            {A: 90, B: 140}, {A: 210, B: 280}, {A: 130, B: 20}, {A: 260, B: 240},
+            {A: 70, B: 70}, {A: 170, B: 170}, {A: 230, B: 130}, {A: 290, B: 270}
+        ];
+
+        function makeBrush() {
+            var svg1 = d3.select("#brush1"), svg2 = d3.select("#brush2");
+
+            var sc1 = d3.scaleLinear()
+                .domain([0, 10, 50])
+                .range(["lime", "yellow", "red"]);
+            var sc2 = d3.scaleLinear()
+                .domain([0, 10, 50])
+                .range(["lime", "yellow", "blue"]);
+
+            var cs1 = drawCircles(svg1, data, d => +d.A, d => +d.B, sc1);
+            var cs2 = drawCircles(svg2, data, d => +d.A, d => +d.B, sc2);
+
+            svg1.call(installHandlers, data, cs1, cs2, sc1, sc2);
+        }
+
+        function drawCircles(svg, data, accX, accY, sc) {
+            var color = sc(Infinity);
+            return svg.selectAll("circle")
+                .data(data)
+                .enter()
+                .append("circle")
+                .attr("r", 5)
+                .attr("cx", accX)
+                .attr("cy", accY)
+                .attr("fill", color)
+                .attr("fill-opacity", 0.4)
+                .style("transition", "fill 0.2s ease");
+        }
+
+        function installHandlers(svg, data, cs1, cs2, sc1, sc2) {
+            svg.attr("cursor", "crosshair")
+                .on("mousemove", function() {
+                    var pt = d3.mouse(svg.node());
+                    cs1.attr("fill", function(d, i) {
+                        var r = Math.hypot(pt[0] - d3.select(this).attr("cx"),
+                                         pt[1] - d3.select(this).attr("cy"));
+                        data[i]["r"] = r;
+                        return sc1(r);
+                    });
+                    cs2.attr("fill", (d, i) => sc2(data[i]["r"]));
+                })
+                .on("mouseleave", function() {
+                    cs1.attr("fill", sc1(Infinity));
+                    cs2.attr("fill", sc2(Infinity));
+                });
+        }
+
+        // Inicializar cuando el DOM esté listo
+        document.addEventListener('DOMContentLoaded', function() {
+            makeBrush();
+        });
+    </script>
+</body>
+</html>
