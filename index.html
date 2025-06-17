@@ -240,7 +240,7 @@
     </div>
 
     <script>
-        // ============== VISUALIZACIÓN 1: EFECTO DE FUEGO (CORREGIDA) ==============
+        // ============== VISUALIZACIÓN 1: EFECTO DE FUEGO ==============
         function initFireEffect() {
             const svg = d3.select('#coords');
             const txt = svg.append('text')
@@ -262,7 +262,6 @@
                     .attr('fill', 'url(#fireGradient)')
                     .style('opacity', intensity);
 
-                // Animate the particle
                 particle.transition()
                     .duration(800 + Math.random() * 400)
                     .ease(d3.easeQuadOut)
@@ -280,19 +279,16 @@
                 const pt = d3.pointer(event, this);
                 const currentTime = Date.now();
                 
-                // Calculate speed
                 const deltaX = pt[0] - lastPosition[0];
                 const deltaY = pt[1] - lastPosition[1];
                 const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
                 const deltaTime = currentTime - lastTime;
                 const speed = distance / (deltaTime || 1);
 
-                // Update coordinate text
                 txt.attr('x', 18 + pt[0])
                    .attr('y', 6 + pt[1])
                    .text('🔥 (' + Math.round(pt[0]) + ',' + Math.round(pt[1]) + ') Velocidad: ' + speed.toFixed(1));
 
-                // Create fire effect if moving fast
                 const speedThreshold = 1.5;
                 if (speed > speedThreshold && deltaTime > 0) {
                     const intensity = Math.min(speed / 5, 1);
@@ -307,7 +303,6 @@
                 lastTime = currentTime;
             });
 
-            // Clean up on mouse leave
             svg.on('mouseleave', function() {
                 txt.text('');
             });
@@ -315,7 +310,7 @@
 
         // ============== VISUALIZACIÓN 2: BRUSH INTERACTIVO (CORREGIDA) ==============
         function initBrushVisualization() {
-            // Datos de ejemplo (simulando el CSV)
+            // Datos de ejemplo
             const data = [
                 {'A': 50, 'B': 80}, {'A': 120, 'B': 150}, {'A': 200, 'B': 100}, {'A': 80, 'B': 200},
                 {'A': 150, 'B': 50}, {'A': 250, 'B': 180}, {'A': 30, 'B': 120}, {'A': 180, 'B': 250},
@@ -327,23 +322,48 @@
             ];
 
             function makeBrush() {
-                var svg1 = d3.select("#brush1"), svg2 = d3.select("#brush2");
-
-                var sc1 = d3.scaleLinear()
-                    .domain([0, 10, 50])
+                const svg1 = d3.select("#brush1");
+                const svg2 = d3.select("#brush2");
+                
+                // Configurar dimensiones
+                const margin = {top: 20, right: 20, bottom: 20, left: 20};
+                const width = 300 - margin.left - margin.right;
+                const height = 300 - margin.top - margin.bottom;
+                
+                // Limpiar SVGs
+                svg1.selectAll("*").remove();
+                svg2.selectAll("*").remove();
+                
+                // Crear grupos
+                const g1 = svg1.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+                const g2 = svg2.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+                
+                // Escalas de posicionamiento
+                const xScale = d3.scaleLinear()
+                    .domain(d3.extent(data, d => d.A))
+                    .range([0, width]);
+                    
+                const yScale = d3.scaleLinear()
+                    .domain(d3.extent(data, d => d.B))
+                    .range([height, 0]);
+                
+                // Escalas de color corregidas
+                const sc1 = d3.scaleLinear()
+                    .domain([0, 50, 100])
                     .range(["lime", "yellow", "red"]);
-                var sc2 = d3.scaleLinear()
-                    .domain([0, 10, 50])
+                    
+                const sc2 = d3.scaleLinear()
+                    .domain([0, 50, 100])
                     .range(["lime", "yellow", "blue"]);
 
-                var cs1 = drawCircles(svg1, data, d => +d.A, d => +d.B, sc1);
-                var cs2 = drawCircles(svg2, data, d => +d.A, d => +d.B, sc2);
+                const cs1 = drawCircles(g1, data, d => xScale(d.A), d => yScale(d.B), sc1);
+                const cs2 = drawCircles(g2, data, d => xScale(d.A), d => yScale(d.B), sc2);
 
-                svg1.call(installHandlers, data, cs1, cs2, sc1, sc2);
+                svg1.call(installHandlers, data, cs1, cs2, sc1, sc2, xScale, yScale, margin);
             }
 
             function drawCircles(svg, data, accX, accY, sc) {
-                var color = sc(Infinity);
+                const color = sc(100); // Color inicial
                 return svg.selectAll("circle")
                     .data(data)
                     .enter()
@@ -352,42 +372,40 @@
                     .attr("cx", accX)
                     .attr("cy", accY)
                     .attr("fill", color)
-                    .attr("fill-opacity", 0.6)
+                    .attr("fill-opacity", 0.7)
                     .attr("stroke", "white")
-                    .attr("stroke-width", 1)
+                    .attr("stroke-width", 1.5)
                     .style("transition", "fill 0.2s ease");
             }
 
-            function installHandlers(svg, data, cs1, cs2, sc1, sc2) {
+            function installHandlers(svg, data, cs1, cs2, sc1, sc2, xScale, yScale, margin) {
                 svg.style("cursor", "crosshair")
                     .on("mousemove", function(event) {
-                        var pt = d3.pointer(event, this);
+                        const pt = d3.pointer(event, this);
+                        // Ajustar por el margen
+                        const adjustedX = pt[0] - margin.left;
+                        const adjustedY = pt[1] - margin.top;
+                        
                         cs1.attr("fill", function(d, i) {
-                            var r = Math.hypot(pt[0] - d3.select(this).attr("cx"),
-                                             pt[1] - d3.select(this).attr("cy"));
+                            const cx = xScale(d.A);
+                            const cy = yScale(d.B);
+                            const r = Math.hypot(adjustedX - cx, adjustedY - cy);
                             data[i]["r"] = r;
                             return sc1(r);
                         });
+
                         cs2.attr("fill", (d, i) => sc2(data[i]["r"]));
                     })
                     .on("mouseleave", function() {
-                        cs1.attr("fill", sc1(Infinity));
-                        cs2.attr("fill", sc2(Infinity));
+                        cs1.attr("fill", sc1(100));
+                        cs2.attr("fill", sc2(100));
                     });
             }
 
             makeBrush();
         }
-        
-                // Llama a makeBrush solo después de que los datos se hayan cargado
-                makeBrush();
-            }).catch(function(error) {
-                // Manejo de errores si el CSV no se puede cargar
-                console.error("Error loading the CSV file:", error);
-            });
-        }
 
-        // ============== VISUALIZACIÓN 3: DRAG & DROP (CORREGIDA) ==============
+        // ============== VISUALIZACIÓN 3: DRAG & DROP ==============
         function initDragDrop() {
             let widget = undefined, color = undefined;
 
@@ -422,7 +440,6 @@
             const scX = d3.scaleLinear().domain([0, n]).range([50, 540]);
             const scY = d3.scaleLinear().domain([0, mx]).range([250, 50]);
 
-            // Create initial bars
             svg.selectAll("line")
                 .data(ds1)
                 .enter()
@@ -434,7 +451,6 @@
                 .attr("x2", (d, i) => scX(i))
                 .attr("y2", d => scY(d));
 
-            // Add click handler for animation
             svg.on("click", function(event) {
                 [ds1, ds2] = [ds2, ds1];
                 svg.selectAll("line")
@@ -451,17 +467,15 @@
 
         function initLissajous() {
             function makeLissajous() {
-                // Stop any existing timer
                 if (currentTimer) {
                     currentTimer.stop();
                 }
                 
-                // Clear the SVG
                 const svg = d3.select("#lissajous");
                 svg.selectAll("*").remove();
                 
-                const a = 1.9, b = 3.2;             // Lissajous frequencies
-                let phi, omega = 2 * Math.PI / 10000; // 10 seconds per period
+                const a = 1.9, b = 3.2;
+                let phi, omega = 2 * Math.PI / 10000;
 
                 let crrX = 150 + 100, crrY = 150 + 0;
                 let prvX = crrX, prvY = crrY;
@@ -472,7 +486,6 @@
                     crrX = 150 + 100 * Math.cos(a * phi);
                     crrY = 150 + 100 * Math.sin(b * phi);
 
-                    // Fade existing lines
                     svg.selectAll("line")
                         .each(function() { 
                             if (!this.bogus_opacity) this.bogus_opacity = 1.0;
@@ -482,7 +495,6 @@
                         .filter(function() { return this.bogus_opacity < 0.05; })
                         .remove();
 
-                    // Add new line segment
                     svg.append("line")
                         .each(function() { this.bogus_opacity = 1.0; })
                         .attr("x1", prvX).attr("y1", prvY)
@@ -492,23 +504,19 @@
                     prvX = crrX;
                     prvY = crrY;
 
-                    if (t > 120e3) { // 120 seconds
+                    if (t > 120e3) {
                         currentTimer.stop();
                         currentTimer = null;
                     }
                 });
             }
 
-            // Start the animation
             makeLissajous();
-            
-            // Add restart button functionality
             document.getElementById('restartBtn').addEventListener('click', makeLissajous);
         }
 
         // ============== INICIALIZACIÓN ==============
         document.addEventListener('DOMContentLoaded', function() {
-            // Inicializar todas las visualizaciones
             initFireEffect();
             initBrushVisualization();
             initDragDrop();
